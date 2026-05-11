@@ -28,7 +28,6 @@ export default defineRouter((/* { store, ssrContext } */) => {
   })
 
   // Guard de autenticação global
-  // Nota: Vue Router 5 não usa mais callback next()
   Router.beforeEach(async (to) => {
     const authStore = useAuthStore()
 
@@ -46,15 +45,16 @@ export default defineRouter((/* { store, ssrContext } */) => {
 
     const requiresAuth = to.matched.some(record => record.meta.requiresAuth)
 
+    // Se não está autenticado e a rota exige auth → login
     if (requiresAuth && !authStore.isAuthenticated) {
-      // Redireciona para login se não estiver autenticado
       return { name: 'login' }
-    } else if (to.name === 'login' && authStore.isAuthenticated) {
-      // Redireciona para dashboard se já estiver autenticado
+    }
+
+    // Se está autenticado e foi para login → dashboard
+    if (to.name === 'login' && authStore.isAuthenticated) {
       return { name: 'dashboard' }
     }
 
-    // Retorna true para permitir navegação
     return true
   })
 

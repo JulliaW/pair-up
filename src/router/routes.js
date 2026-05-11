@@ -6,12 +6,12 @@ const routes = [
     component: () => import('pages/LoginPage.vue'),
     meta: { requiresAuth: false }
   },
-  // Rota para aceitar convite (autenticado, mas sem exigir casal)
+  // Rota para aceitar convite (pública - pode ser acessada sem login)
   {
     path: '/aceitar-convite',
     name: 'aceitar-convite',
     component: () => import('pages/AcceptInvitePage.vue'),
-    meta: { requiresAuth: true, requiresCouple: false }
+    meta: { requiresAuth: false }
   },
 
   // Rotas protegidas (requer autenticação + casal)

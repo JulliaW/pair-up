@@ -115,12 +115,11 @@ const inviteCode = computed(() => {
 });
 
 const partner1Name = computed(() => {
-  return authStore.user?.name || "Você";
+  return authStore.couple?.partner1_name || authStore.user?.name || "Você";
 });
 
 const partner2Name = computed(() => {
-  // Simplificado - em uma implementação real, buscaríamos o nome do partner2
-  return null;
+  return authStore.couple?.partner2_name || null;
 });
 
 async function copyInviteCode() {

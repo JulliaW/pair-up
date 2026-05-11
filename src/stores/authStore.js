@@ -54,21 +54,25 @@ export const useAuthStore = defineStore('auth', {
         avatarUrl: userData.avatar_url
       }
 
-      // Busca dados do casal separadamente
+      // Busca dados do casal separadamente (com os nomes dos parceiros)
       if (userData.couple_id) {
         const { data: coupleData, error: coupleError } = await supabase
           .from('couples')
-          .select('*')
+          .select('*, partner1:partner1_id(id, name), partner2:partner2_id(id, name)')
           .eq('id', userData.couple_id)
           .maybeSingle()
 
         if (!coupleError && coupleData) {
-          this.couple = coupleData
+          this.couple = {
+            ...coupleData,
+            partner1_name: coupleData.partner1?.name || null,
+            partner2_name: coupleData.partner2?.name || null
+          }
         }
       }
     },
 
-    async register (email, password, name) {
+    async register (email, password, name, hasInviteCode = false) {
       this.loading = true
       try {
         // 1. Criar usuário no Supabase Auth
@@ -90,29 +94,36 @@ export const useAuthStore = defineStore('auth', {
 
         if (updateNameError) throw updateNameError
 
-        // 3. Criar couple (casal) e vincular partner1
-        const { data: coupleData, error: coupleError } = await supabase
-          .from('couples')
-          .insert({
-            partner1_id: authData.user.id,
-            invite_code: this.generateInviteCode()
-          })
-          .select()
-          .single()
+        // Se NÃO tem código de convite, cria um novo casal (Usuário 1)
+        if (!hasInviteCode) {
+          const { data: coupleData, error: coupleError } = await supabase
+            .from('couples')
+            .insert({
+              partner1_id: authData.user.id,
+              invite_code: this.generateInviteCode()
+            })
+            .select()
+            .single()
 
-        if (coupleError) throw coupleError
+          if (coupleError) throw coupleError
 
-        // 4. Atualizar user com couple_id
-        const { error: updateError } = await supabase
-          .from('users')
-          .update({ couple_id: coupleData.id })
-          .eq('id', authData.user.id)
+          // Atualizar user com couple_id
+          const { error: updateError } = await supabase
+            .from('users')
+            .update({ couple_id: coupleData.id })
+            .eq('id', authData.user.id)
 
-        if (updateError) throw updateError
+          if (updateError) throw updateError
 
+          await this.fetchUserData(authData.user.id)
+
+          return { success: true, inviteCode: coupleData.invite_code }
+        }
+
+        // Se TEM código de convite (Usuário 2), não cria casal
+        // O guard de navegação vai redirecionar para /aceitar-convite
         await this.fetchUserData(authData.user.id)
-
-        return { success: true, inviteCode: coupleData.invite_code }
+        return { success: true, inviteCode: null, needsInvite: true }
       } catch (err) {
         console.error('Erro no registro:', err)
         return { success: false, error: err.message }
