@@ -1,1 +1,70 @@
-// app global css
+// Estilos globais do PairUp
+// ========================================
+
+// Reset e estilos base para mobile-first
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+// Garantir que o conteúdo não fique atrás da bottom nav
+body .q-page-container {
+  padding-bottom: 56px;
+}
+
+body.body--dark {
+  .q-page-container {
+    background: $dark-page;
+  }
+}
+
+// Scroll suave no iOS
+* {
+  -webkit-overflow-scrolling: touch;
+}
+
+// Remove tap highlight no mobile
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+// Transições suaves
+.q-page {
+  transition: background-color 0.3s ease;
+}
+
+// Card padrão do app
+.pairup-card {
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  transition: box-shadow 0.2s ease;
+
+  &:hover {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  }
+}
+
+// FAB padronizado
+.pairup-fab {
+  position: fixed;
+  bottom: 80px;
+  right: 16px;
+}
+
+// Animações de entrada
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in-up {
+  animation: fadeInUp 0.3s ease forwards;
+}

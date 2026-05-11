@@ -12,6 +12,9 @@ export default defineConfig((/* ctx */) => {
     // --> boot files are part of "main.js"
     // https://v2.quasar.dev/quasar-cli-vite/boot-files
     boot: [
+      'pinia',
+      'supabase',
+      'supabase-auth'
     ],
 
     // https://v2.quasar.dev/quasar-cli-vite/quasar-config-file#css
@@ -41,23 +44,12 @@ export default defineConfig((/* ctx */) => {
       },
 
       vueRouterMode: 'hash', // available values: 'hash', 'history'
-      // vueRouterBase,
-      // vueDevtools,
-      // vueOptionsAPI: false,
 
-      // rebuildCache: true, // rebuilds Vite/linter/etc cache on startup
-
-      // publicPath: '/',
-      // analyze: true,
-      // env: {},
-      // rawDefine: {}
-      // ignorePublicFolder: true,
-      // minify: false,
-      // polyfillModulePreload: true,
-      // distDir
-
-      // extendViteConf (viteConf) {},
-      // viteVuePluginOptions: {},
+      // Env vars disponíveis no frontend (começam com VITE_)
+      env: {
+        VITE_SUPABASE_URL: process.env.VITE_SUPABASE_URL || '',
+        VITE_SUPABASE_ANON_KEY: process.env.VITE_SUPABASE_ANON_KEY || ''
+      },
 
       vitePlugins: [
         ['vite-plugin-checker', {
@@ -89,8 +81,11 @@ export default defineConfig((/* ctx */) => {
       // components: [],
       // directives: [],
 
-      // Quasar plugins
-      plugins: []
+      plugins: [
+        'Dialog',
+        'Loading',
+        'Notify'
+      ]
     },
 
     // animations: 'all', // --- includes all animations
