@@ -20,6 +20,13 @@
         <q-btn flat round dense icon="account_circle">
           <q-menu auto-close>
             <q-list style="min-width: 180px">
+              <q-item clickable @click="$router.push('/convidar')">
+                <q-item-section avatar>
+                  <q-icon name="group_add" />
+                </q-item-section>
+                <q-item-section>Convidar parceiro(a)</q-item-section>
+              </q-item>
+              <q-separator />
               <q-item clickable @click="handleLogout">
                 <q-item-section avatar>
                   <q-icon name="logout" />
@@ -93,6 +100,7 @@ const routeTitles = {
   "/financas/cartoes": "Cartões de Crédito",
   "/financas/apartamento": "Apartamento",
   "/financas/cofrinho": "Cofrinho",
+  "/convidar": "Convidar Parceiro(a)",
 };
 
 // Rotas que não exibem o header

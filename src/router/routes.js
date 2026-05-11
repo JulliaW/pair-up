@@ -6,8 +6,15 @@ const routes = [
     component: () => import('pages/LoginPage.vue'),
     meta: { requiresAuth: false }
   },
+  // Rota para aceitar convite (autenticado, mas sem exigir casal)
+  {
+    path: '/aceitar-convite',
+    name: 'aceitar-convite',
+    component: () => import('pages/AcceptInvitePage.vue'),
+    meta: { requiresAuth: true, requiresCouple: false }
+  },
 
-  // Rotas protegidas (requer autenticação)
+  // Rotas protegidas (requer autenticação + casal)
   {
     path: '/',
     component: () => import('layouts/MainLayout.vue'),
@@ -62,6 +69,11 @@ const routes = [
         path: 'financas/cofrinho',
         name: 'cofrinho',
         component: () => import('pages/Finance/SavingsPage.vue')
+      },
+      {
+        path: 'convidar',
+        name: 'convidar',
+        component: () => import('pages/InvitePage.vue')
       }
     ]
   },

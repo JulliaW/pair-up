@@ -231,8 +231,10 @@
 import { ref, computed, watch, onMounted } from "vue";
 import { useAgendaStore } from "src/stores/agendaStore";
 import { useAuthStore } from "src/stores/authStore";
+import { useQuasar } from "quasar";
 import { getMonthName } from "src/utils/formatters";
 
+const $q = useQuasar();
 const agendaStore = useAgendaStore();
 const authStore = useAuthStore();
 
@@ -409,6 +411,13 @@ async function handleSaveEvent() {
   if (result.success) {
     showEventDialog.value = false;
     resetForm();
+    $q.notify({ type: "positive", message: "Evento salvo!", position: "top" });
+  } else {
+    $q.notify({
+      type: "negative",
+      message: result.error || "Erro ao salvar evento",
+      position: "top",
+    });
   }
 }
 
@@ -417,6 +426,11 @@ async function handleDeleteEvent(id) {
   if (result.success) {
     showEventDialog.value = false;
     editingEvent.value = null;
+    $q.notify({
+      type: "positive",
+      message: "Evento excluído!",
+      position: "top",
+    });
   }
 }
 
