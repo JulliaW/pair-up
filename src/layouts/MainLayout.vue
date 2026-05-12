@@ -104,7 +104,7 @@ const routeTitles = {
 };
 
 // Rotas que não exibem o header
-const routesWithoutHeader = ["/login"];
+const routesWithoutHeader = ["/login", "/"];
 // Rotas que não exibem a bottom nav
 const routesWithoutBottomNav = ["/login"];
 

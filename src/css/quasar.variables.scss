@@ -8,18 +8,25 @@
 // Your own variables (that are declared here) and Quasar's own
 // ones will be available out of the box in your .vue/.scss/.sass files
 
-// Paleta PairUp - Tons neutros com Indigo como primária
-$primary   : #5C6BC0; // Indigo suave - premium/neutro
-$secondary : #26A69A; // Teal
-$accent    : #7E57C2; // Deep Purple
+// ==========================================
+//  PairUp Premium Design System
+//  Inspirado em apps financeiros modernos
+// ==========================================
 
-$dark      : #1D1D1D;
-$dark-page : #121212;
+// Primária: Teal/Green (estilo referência)
+$primary   : #0D9488; // Teal 600 - sofisticado
+$secondary : #64748B; // Slate 500 - neutro elegante
+$accent    : #8B5CF6; // Violet 500 - lilás sutil
 
-$positive  : #43A047;
-$negative  : #E53935;
-$info      : #039BE5;
-$warning   : #FB8C00;
+// Dark mode premium (estilo iOS)
+$dark      : #0F172A; // Slate 900
+$dark-page : #020617; // Slate 950 - quase preto
+
+// Cores semânticas refinadas
+$positive  : #10B981; // Emerald 500
+$negative  : #EF4444; // Red 500
+$info      : #3B82F6; // Blue 500
+$warning   : #F59E0B; // Amber 500
 
 // Custom spacing para mobile
 $space-base   : 16px;
