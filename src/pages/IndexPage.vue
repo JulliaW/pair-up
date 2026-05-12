@@ -230,6 +230,18 @@ const financeStore = useFinanceStore();
 const agendaStore = useAgendaStore();
 const authStore = useAuthStore();
 
+async function loadAllDashboardData() {
+  if (!authStore.couple?.id) return;
+  await Promise.all([
+    financeStore.fetchTransactions(),
+    financeStore.fetchCategories(),
+    financeStore.fetchCreditCards(),
+    financeStore.fetchProperty(),
+    financeStore.fetchSavingsGoals(),
+    agendaStore.fetchEvents(),
+  ]);
+}
+
 const currentMonthLabel = computed(() => {
   const months = [
     "Janeiro",
@@ -288,16 +300,17 @@ function formatMonth(dateStr) {
   return months[new Date(dateStr + "T00:00:00").getMonth()];
 }
 
+// Tenta carregar dados no mount (se auth já estiver pronto)
 onMounted(async () => {
-  if (authStore.coupleId) {
-    await Promise.all([
-      financeStore.fetchTransactions(),
-      financeStore.fetchCategories(),
-      financeStore.fetchCreditCards(),
-      financeStore.fetchProperty(),
-      financeStore.fetchSavingsGoals(),
-      agendaStore.fetchEvents(),
-    ]);
+  if (authStore.couple?.id) {
+    await loadAllDashboardData();
+  }
+});
+
+// Observa mudanças no store Pinia para carregar dados quando couple for definido
+authStore.$subscribe(async (mutation, state) => {
+  if (state.couple?.id) {
+    await loadAllDashboardData();
   }
 });
 </script>

@@ -1,5 +1,5 @@
 <template>
-  <q-layout view="lhh lpR fff" class="main-layout">
+  <q-layout view="hHh lpR fFf" class="main-layout">
     <!-- Header -->
     <q-header v-if="showHeader" elevated class="bg-primary text-white">
       <q-toolbar>
@@ -44,8 +44,8 @@
       <router-view />
     </q-page-container>
 
-    <!-- Bottom Navigation -->
-    <q-footer v-if="showBottomNav" bordered class="bg-white text-grey-8">
+    <!-- Bottom Navigation (sempre fixo) -->
+    <q-footer bordered class="bg-white text-grey-8 bottom-footer">
       <q-tabs
         v-model="currentTab"
         dense
@@ -105,9 +105,6 @@ const routeTitles = {
 
 // Rotas que não exibem o header
 const routesWithoutHeader = ["/login", "/"];
-// Rotas que não exibem a bottom nav
-const routesWithoutBottomNav = ["/login"];
-
 const currentTab = ref("/");
 
 // Sincroniza a tab ativa com a rota atual
@@ -137,10 +134,6 @@ const showHeader = computed(() => {
   return !routesWithoutHeader.includes(route.path);
 });
 
-const showBottomNav = computed(() => {
-  return !routesWithoutBottomNav.includes(route.path);
-});
-
 function navigateTo(routeName) {
   router.push(routeName);
 }
@@ -156,11 +149,11 @@ async function handleLogout() {
 }
 </script>
 
-<style scoped lang="scss">
+<style lang="scss">
 .main-layout {
   // Garante que o conteúdo não fique atrás da bottom nav
   .q-page-container {
-    padding-bottom: 56px; // altura da bottom nav
+    padding-bottom: 56px;
   }
 }
 
@@ -177,6 +170,10 @@ async function handleLogout() {
       }
     }
   }
+}
+
+.bottom-footer {
+  z-index: 2000 !important;
 }
 
 // Ajuste para quando não tem header
