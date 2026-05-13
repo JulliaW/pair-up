@@ -1,5 +1,17 @@
 <template>
   <q-page class="q-pa-md">
+    <!-- Botão Voltar -->
+    <div class="row items-center q-mb-sm">
+      <q-btn
+        flat
+        dense
+        icon="arrow_back"
+        label="Voltar"
+        @click="$router.push('/financas')"
+      />
+      <q-space />
+    </div>
+
     <!-- Navegação de Mês -->
     <div class="row items-center q-mb-md">
       <q-btn flat round icon="chevron_left" @click="financeStore.prevMonth()" />

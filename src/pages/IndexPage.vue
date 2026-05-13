@@ -14,47 +14,40 @@
           icon="arrow_upward"
           icon-color="positive"
           label="Receitas"
-          :value="formatCurrency(financeStore.monthIncome)"
+          :value="financeStore.monthIncome"
         />
         <SummaryCard
           icon="arrow_downward"
           icon-color="negative"
           label="Despesas"
-          :value="formatCurrency(financeStore.monthExpenses)"
+          :value="financeStore.monthExpenses"
         />
         <SummaryCard
           icon="account_balance_wallet"
           icon-color="primary"
           label="Saldo"
-          :value="formatCurrency(financeStore.monthBalance)"
+          :value="financeStore.monthBalance"
           :full-width="true"
         />
       </div>
     </div>
 
     <!-- Gráfico de Gastos por Categoria -->
-    <div
-      v-if="financeStore.transactionsByCategory.length > 0"
-      class="dashboard-section"
-    >
+    <div v-if="chartData.length > 0" class="dashboard-section">
       <div class="section-header">
         <span class="section-title">Gastos por Categoria</span>
       </div>
       <div class="chart-card">
-        <DonutChart
-          :data="financeStore.transactionsByCategory"
-          :size="180"
-          :stroke-width="28"
-        />
+        <DonutChart :data="chartData" :size="180" :stroke-width="28" />
         <div class="chart-legend">
           <div
-            v-for="item in financeStore.transactionsByCategory.slice(0, 5)"
-            :key="item.name"
+            v-for="item in chartData.slice(0, 5)"
+            :key="item.label"
             class="legend-item"
           >
             <span class="legend-dot" :style="{ background: item.color }" />
-            <span class="legend-name">{{ item.name }}</span>
-            <span class="legend-value">{{ formatCurrency(item.total) }}</span>
+            <span class="legend-name">{{ item.label }}</span>
+            <span class="legend-value">{{ formatCurrency(item.value) }}</span>
           </div>
         </div>
       </div>
@@ -260,15 +253,27 @@ const currentMonthLabel = computed(() => {
   return `${months[financeStore.currentMonth - 1]} ${financeStore.currentYear}`;
 });
 
+const chartData = computed(() => {
+  return financeStore.expensesByCategory.map((item) => ({
+    label: item.name,
+    value: item.total,
+    color: item.color,
+  }));
+});
+
 const propertyProgress = computed(() => {
   if (!financeStore.property) return 0;
   const total = Number(financeStore.property.financed_amount) || 1;
-  const paid = Number(financeStore.property.paid_amount) || 0;
-  return Math.min(100, Math.round((paid / total) * 100));
+  const remaining = Number(financeStore.property.remaining_balance) || total;
+  const paid = total - remaining;
+  return Math.min(100, Math.max(0, Math.round((paid / total) * 100)));
 });
 
 const propertyPaid = computed(() => {
-  return Number(financeStore.property?.paid_amount) || 0;
+  if (!financeStore.property) return 0;
+  const total = Number(financeStore.property.financed_amount) || 0;
+  const remaining = Number(financeStore.property.remaining_balance) || total;
+  return Math.max(0, total - remaining);
 });
 
 function formatCurrency(value) {

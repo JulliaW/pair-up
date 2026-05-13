@@ -1,125 +1,146 @@
 <template>
-  <q-page class="finance-page q-pa-md">
-    <!-- Resumo do Mês -->
-    <div class="row q-col-gutter-md q-mb-md">
-      <div class="col-4">
-        <q-card flat bordered class="finance-card">
-          <q-card-section class="text-center q-pa-sm">
-            <div class="text-caption text-grey-7">Receitas</div>
-            <div class="text-positive text-weight-bold">
-              {{ formatCurrency(monthIncome) }}
-            </div>
-          </q-card-section>
-        </q-card>
-      </div>
-      <div class="col-4">
-        <q-card flat bordered class="finance-card">
-          <q-card-section class="text-center q-pa-sm">
-            <div class="text-caption text-grey-7">Despesas</div>
-            <div class="text-negative text-weight-bold">
-              {{ formatCurrency(monthExpenses) }}
-            </div>
-          </q-card-section>
-        </q-card>
-      </div>
-      <div class="col-4">
-        <q-card flat bordered class="finance-card">
-          <q-card-section class="text-center q-pa-sm">
-            <div class="text-caption text-grey-7">Saldo</div>
-            <div class="text-weight-bold" :class="balanceColor">
-              {{ formatCurrency(monthBalance) }}
-            </div>
-          </q-card-section>
-        </q-card>
-      </div>
-    </div>
+  <q-page class="finance-page">
+    <DashboardHeader />
 
-    <!-- Ações Rápidas -->
-    <div class="row q-col-gutter-sm q-mb-md">
-      <div class="col-6">
-        <q-btn
-          outline
-          color="positive"
-          icon="add"
-          label="Nova Receita"
-          class="full-width"
-          @click="openTransactionDialog('income')"
-        />
-      </div>
-      <div class="col-6">
-        <q-btn
-          outline
-          color="negative"
-          icon="remove"
-          label="Nova Despesa"
-          class="full-width"
-          @click="openTransactionDialog('expense')"
-        />
-      </div>
-    </div>
-
-    <!-- Menu de Módulos -->
-    <div class="text-subtitle1 text-weight-bold q-mb-sm">Módulos</div>
-    <div class="row q-col-gutter-sm q-mb-md">
-      <div class="col-6" v-for="mod in modules" :key="mod.route">
-        <q-card
-          flat
-          bordered
-          class="module-card cursor-pointer"
-          @click="$router.push(mod.route)"
-        >
-          <q-card-section class="text-center q-pa-md">
-            <q-icon :name="mod.icon" :color="mod.color" size="32px" />
-            <div class="text-weight-medium q-mt-sm">{{ mod.label }}</div>
-          </q-card-section>
-        </q-card>
-      </div>
-    </div>
-
-    <!-- Últimas Transações -->
-    <div class="row items-center q-mb-sm">
-      <div class="col text-subtitle1 text-weight-bold">Últimas Transações</div>
-      <q-btn
-        flat
-        dense
-        icon="chevron_right"
-        size="sm"
-        @click="$router.push('/financas/transacoes')"
-      />
-    </div>
-
-    <div
-      v-if="financeStore.transactions.length === 0"
-      class="text-center text-grey-5 q-py-lg"
-    >
-      <q-icon name="receipt_long" size="48px" />
-      <p class="q-mt-sm">Nenhuma transação este mês</p>
-    </div>
-
-    <div v-else class="q-gutter-sm">
-      <div
-        v-for="t in recentTransactions"
-        :key="t.id"
-        class="row items-center transaction-row q-pa-sm"
-      >
-        <div class="col-auto">
-          <q-icon
-            :name="t.type === 'income' ? 'arrow_downward' : 'arrow_upward'"
-            :color="t.type === 'income' ? 'positive' : 'negative'"
+    <div class="dashboard-section">
+      <div class="section-header">
+        <div class="row items-center">
+          <q-btn
+            flat
+            round
+            dense
+            icon="chevron_left"
             size="sm"
+            @click="financeStore.prevMonth()"
+          />
+          <span class="section-title q-mx-sm">{{ currentMonthLabel }}</span>
+          <q-btn
+            flat
+            round
+            dense
+            icon="chevron_right"
+            size="sm"
+            @click="financeStore.nextMonth()"
           />
         </div>
-        <div class="col q-ml-sm">
-          <div class="text-weight-medium">
-            {{ t.description || "Sem descrição" }}
+      </div>
+      <div class="summary-grid">
+        <SummaryCard
+          icon="arrow_upward"
+          icon-color="positive"
+          label="Receitas"
+          :value="monthIncome"
+        />
+        <SummaryCard
+          icon="arrow_downward"
+          icon-color="negative"
+          label="Despesas"
+          :value="monthExpenses"
+        />
+        <SummaryCard
+          icon="account_balance_wallet"
+          icon-color="primary"
+          label="Saldo"
+          :value="monthBalance"
+          :full-width="true"
+        />
+      </div>
+    </div>
+
+    <div class="dashboard-section">
+      <div class="section-header">
+        <span class="section-title">Ações Rápidas</span>
+      </div>
+      <div class="quick-actions">
+        <q-btn
+          flat
+          class="quick-action-btn"
+          @click="openTransactionDialog('income')"
+        >
+          <div class="quick-action-content">
+            <q-icon name="add_circle" size="24px" color="positive" />
+            <span>Nova Receita</span>
           </div>
-          <div class="text-caption text-grey-7">
-            {{ t.categories?.name || "Sem categoria" }}
+        </q-btn>
+        <q-btn
+          flat
+          class="quick-action-btn"
+          @click="openTransactionDialog('expense')"
+        >
+          <div class="quick-action-content">
+            <q-icon name="remove_circle" size="24px" color="negative" />
+            <span>Nova Despesa</span>
           </div>
-        </div>
-        <div class="col-auto">
+        </q-btn>
+      </div>
+    </div>
+
+    <div class="dashboard-section">
+      <div class="section-header">
+        <span class="section-title">Módulos</span>
+      </div>
+      <div class="modules-grid">
+        <q-btn
+          v-for="mod in modules"
+          :key="mod.route"
+          flat
+          class="module-btn"
+          @click="$router.push(mod.route)"
+        >
+          <div class="module-content">
+            <div
+              class="module-icon-wrapper"
+              :style="{ background: mod.bgColor }"
+            >
+              <q-icon :name="mod.icon" size="28px" :color="mod.color" />
+            </div>
+            <span class="module-label">{{ mod.label }}</span>
+          </div>
+        </q-btn>
+      </div>
+    </div>
+
+    <div class="dashboard-section">
+      <div class="section-header">
+        <span class="section-title">Últimas Transações</span>
+        <q-btn
+          flat
+          dense
+          size="sm"
+          color="primary"
+          label="Ver todas"
+          @click="$router.push('/financas/transacoes')"
+        />
+      </div>
+      <div v-if="financeStore.transactions.length === 0" class="empty-state">
+        <q-icon name="receipt_long" size="32px" color="grey-5" />
+        <p>Nenhuma transação este mês</p>
+      </div>
+      <div v-else class="transactions-list">
+        <div
+          v-for="t in recentTransactions"
+          :key="t.id"
+          class="transaction-item"
+        >
+          <div
+            class="transaction-icon"
+            :class="t.type === 'income' ? 'icon-income' : 'icon-expense'"
+          >
+            <q-icon
+              :name="t.type === 'income' ? 'arrow_downward' : 'arrow_upward'"
+              size="16px"
+            />
+          </div>
+          <div class="transaction-info">
+            <span class="transaction-desc">{{
+              t.description || "Sem descrição"
+            }}</span>
+            <span class="transaction-cat">{{
+              t.categories?.name || "Sem categoria"
+            }}</span>
+          </div>
           <span
-            class="text-weight-bold"
+            class="transaction-amount"
             :class="t.type === 'income' ? 'text-positive' : 'text-negative'"
           >
             {{ t.type === "income" ? "+" : "-" }}{{ formatCurrency(t.amount) }}
@@ -128,7 +149,8 @@
       </div>
     </div>
 
-    <!-- Dialog de Transação -->
+    <div class="page-spacer" />
+
     <q-dialog v-model="showTransactionDialog">
       <q-card style="min-width: 350px; max-width: 500px">
         <q-card-section>
@@ -145,7 +167,6 @@
               dense
               :rules="[(val) => !!val || 'Descrição é obrigatória']"
             />
-
             <q-input
               v-model="transactionForm.amount"
               label="Valor"
@@ -156,7 +177,6 @@
               step="0.01"
               :rules="[(val) => !!val || 'Valor é obrigatório']"
             />
-
             <q-input
               v-model="transactionForm.date"
               label="Data"
@@ -164,7 +184,6 @@
               outlined
               dense
             />
-
             <q-select
               v-model="transactionForm.category_id"
               label="Categoria"
@@ -174,7 +193,6 @@
               emit-value
               map-options
             />
-
             <div class="row q-gutter-sm">
               <q-space />
               <q-btn flat label="Cancelar" color="negative" v-close-popup />
@@ -191,6 +209,8 @@
 import { ref, computed, onMounted } from "vue";
 import { useFinanceStore } from "src/stores/financeStore";
 import { formatCurrency } from "src/utils/formatters";
+import DashboardHeader from "src/components/DashboardHeader.vue";
+import SummaryCard from "src/components/SummaryCard.vue";
 
 const financeStore = useFinanceStore();
 
@@ -208,38 +228,53 @@ const modules = [
     icon: "receipt_long",
     label: "Transações",
     color: "primary",
+    bgColor: "rgba(13, 148, 136, 0.1)",
     route: "/financas/transacoes",
   },
   {
     icon: "credit_card",
     label: "Cartões",
     color: "negative",
+    bgColor: "rgba(239, 68, 68, 0.1)",
     route: "/financas/cartoes",
   },
   {
     icon: "apartment",
     label: "Apartamento",
     color: "info",
+    bgColor: "rgba(59, 130, 246, 0.1)",
     route: "/financas/apartamento",
   },
   {
     icon: "savings",
     label: "Cofrinho",
     color: "positive",
+    bgColor: "rgba(16, 185, 129, 0.1)",
     route: "/financas/cofrinho",
   },
 ];
 
+const currentMonthLabel = computed(() => {
+  const months = [
+    "Janeiro",
+    "Fevereiro",
+    "Março",
+    "Abril",
+    "Maio",
+    "Junho",
+    "Julho",
+    "Agosto",
+    "Setembro",
+    "Outubro",
+    "Novembro",
+    "Dezembro",
+  ];
+  return months[financeStore.currentMonth - 1] + " " + financeStore.currentYear;
+});
+
 const monthIncome = computed(() => financeStore.monthIncome);
 const monthExpenses = computed(() => financeStore.monthExpenses);
 const monthBalance = computed(() => financeStore.monthBalance);
-
-const balanceColor = computed(() => {
-  const b = financeStore.monthBalance;
-  if (b > 0) return "text-positive";
-  if (b < 0) return "text-negative";
-  return "text-grey";
-});
 
 const recentTransactions = computed(() => {
   return financeStore.transactions.slice(0, 5);
@@ -250,7 +285,8 @@ const categoryOptions = computed(() => {
     .filter(
       (c) =>
         c.type === transactionType.value &&
-        (!c.couple_id || c.couple_id === financeStore.coupleId),
+        (!c.couple_id || c.couple_id === financeStore.coupleId) &&
+        c.scope !== "property",
     )
     .map((c) => ({ label: c.name, value: c.id }));
 });
@@ -286,19 +322,166 @@ onMounted(() => {
 </script>
 
 <style scoped lang="scss">
-.finance-card {
-  border-radius: 8px;
+.finance-page {
+  padding: 0;
+  background: var(--background);
+  min-height: 100vh;
 }
-
-.module-card {
-  border-radius: 12px;
-  transition: box-shadow 0.2s;
-  &:hover {
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+.dashboard-section {
+  padding: 12px 16px;
+  & + .dashboard-section {
+    border-top: 1px solid var(--separator);
   }
 }
-
-.transaction-row {
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.section-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+.summary-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.quick-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.quick-action-btn {
+  background: var(--surface);
+  border: 1px solid var(--separator);
+  border-radius: 12px;
+  padding: 0;
+  min-height: 72px;
+  &::before {
+    box-shadow: none;
+  }
+}
+.quick-action-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 8px;
+  span {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--text-primary);
+  }
+}
+.modules-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.module-btn {
+  background: var(--surface);
+  border: 1px solid var(--separator);
+  border-radius: 12px;
+  padding: 0;
+  min-height: 80px;
+  &::before {
+    box-shadow: none;
+  }
+  &:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  }
+}
+.module-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 8px;
+}
+.module-icon-wrapper {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.module-label {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 24px;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+.transactions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.transaction-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--surface);
+  border: 1px solid var(--separator);
+  border-radius: 12px;
+  padding: 12px;
+}
+.transaction-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  &.icon-income {
+    background: rgba(16, 185, 129, 0.12);
+    color: #059669;
+  }
+  &.icon-expense {
+    background: rgba(239, 68, 68, 0.12);
+    color: #dc2626;
+  }
+}
+.transaction-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+.transaction-desc {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.transaction-cat {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+.transaction-amount {
+  font-size: 0.875rem;
+  font-weight: 700;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.page-spacer {
+  height: 24px;
 }
 </style>

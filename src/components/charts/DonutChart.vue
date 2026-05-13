@@ -29,8 +29,6 @@
         :stroke-dasharray="segment.dashArray"
         :stroke-dashoffset="segment.dashOffset"
         :stroke-linecap="rounded ? 'round' : 'butt'"
-        class="donut-segment"
-        :style="{ animationDelay: `${index * 0.1}s` }"
       />
 
       <!-- Texto central -->
@@ -182,17 +180,6 @@ const segments = computed(() => {
 
 .donut-chart {
   transform: rotate(-90deg);
-}
-
-.donut-segment {
-  animation: drawSegment 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  stroke-dasharray: 0 1000;
-}
-
-@keyframes drawSegment {
-  to {
-    stroke-dasharray: var(--final-dasharray);
-  }
 }
 
 .donut-center-text {

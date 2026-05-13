@@ -8,6 +8,7 @@ export const useFinanceStore = defineStore('finance', {
     categories: [],
     creditCards: [],
     property: null,
+    propertyTransactions: [],
     propertyEvolution: [],
     savingsGoals: [],
     currentMonth: new Date().getMonth() + 1,
@@ -46,6 +47,37 @@ export const useFinanceStore = defineStore('finance', {
         grouped[catName].count++
       })
       return Object.values(grouped).sort((a, b) => b.total - a.total)
+    },
+    expensesByCategory: (state) => {
+      const grouped = {}
+      state.transactions
+        .filter(t => t.type === 'expense')
+        .forEach(t => {
+          const catName = t.categories?.name || 'Sem categoria'
+          if (!grouped[catName]) {
+            grouped[catName] = { name: catName, total: 0, color: t.categories?.color || '#999', count: 0 }
+          }
+          grouped[catName].total += Number(t.amount)
+          grouped[catName].count++
+        })
+      return Object.values(grouped).sort((a, b) => b.total - a.total)
+    },
+    propertyExpensesByCategory: (state) => {
+      const grouped = {}
+      ;(state.propertyTransactions || []).forEach(t => {
+        const catName = t.categories?.name || 'Sem categoria'
+        if (!grouped[catName]) {
+          grouped[catName] = { name: catName, total: 0, color: t.categories?.color || '#999', count: 0 }
+        }
+        grouped[catName].total += Number(t.amount)
+        grouped[catName].count++
+      })
+      return Object.values(grouped).sort((a, b) => b.total - a.total)
+    },
+    propertyMonthTotal: (state) => {
+      return (state.propertyTransactions || [])
+        .filter(t => t.type === 'expense')
+        .reduce((sum, t) => sum + Number(t.amount), 0)
     }
   },
 
@@ -62,7 +94,7 @@ export const useFinanceStore = defineStore('finance', {
 
         const { data, error } = await supabase
           .from('transactions')
-          .select('id, type, amount, description, date, category_id, card_id, is_recurring, created_by, created_at, categories(id, name, type, icon, color)')
+          .select('id, type, amount, description, date, category_id, card_id, is_recurring, created_by, created_at, categories(id, name, type, icon, color, scope)')
           .eq('couple_id', authStore.coupleId)
           .gte('date', startDate)
           .lte('date', endDate)
@@ -74,6 +106,31 @@ export const useFinanceStore = defineStore('finance', {
         console.error('Erro ao buscar transações:', err)
       } finally {
         this.loading = false
+      }
+    },
+
+    async fetchPropertyTransactions () {
+      const authStore = useAuthStore()
+      if (!authStore.coupleId) return
+
+      try {
+        const startDate = `${this.currentYear}-${String(this.currentMonth).padStart(2, '0')}-01`
+        const endDate = new Date(this.currentYear, this.currentMonth, 0)
+          .toISOString().split('T')[0]
+
+        const { data, error } = await supabase
+          .from('transactions')
+          .select('id, type, amount, description, date, category_id, card_id, is_recurring, created_by, created_at, categories(id, name, type, icon, color, scope)')
+          .eq('couple_id', authStore.coupleId)
+          .eq('property_related', true)
+          .gte('date', startDate)
+          .lte('date', endDate)
+          .order('date', { ascending: false })
+
+        if (error) throw error
+        this.propertyTransactions = data || []
+      } catch (err) {
+        console.error('Erro ao buscar transações do apartamento:', err)
       }
     },
 
@@ -93,14 +150,19 @@ export const useFinanceStore = defineStore('finance', {
             date: transaction.date,
             category_id: transaction.category_id || null,
             card_id: transaction.card_id || null,
+            property_related: transaction.property_related || false,
+            property_id: transaction.property_id || null,
             is_recurring: transaction.is_recurring || false,
             created_by: authStore.user?.id
           })
-          .select('id, type, amount, description, date, category_id, card_id, is_recurring, created_by, created_at, categories(id, name, type, icon, color)')
+          .select('id, type, amount, description, date, category_id, card_id, is_recurring, created_by, created_at, categories(id, name, type, icon, color, scope)')
           .single()
 
         if (error) throw error
         this.transactions.unshift(data)
+        if (transaction.property_related) {
+          this.propertyTransactions.unshift(data)
+        }
         return { success: true, data }
       } catch (err) {
         console.error('Erro ao criar transação:', err)
@@ -119,6 +181,7 @@ export const useFinanceStore = defineStore('finance', {
 
         if (error) throw error
         this.transactions = this.transactions.filter(t => t.id !== id)
+        this.propertyTransactions = this.propertyTransactions.filter(t => t.id !== id)
         return { success: true }
       } catch (err) {
         console.error('Erro ao deletar transação:', err)
@@ -265,6 +328,7 @@ export const useFinanceStore = defineStore('finance', {
       this.currentMonth = month
       this.currentYear = year
       this.fetchTransactions()
+      this.fetchPropertyTransactions()
     },
 
     nextMonth () {
@@ -275,6 +339,7 @@ export const useFinanceStore = defineStore('finance', {
         this.currentMonth++
       }
       this.fetchTransactions()
+      this.fetchPropertyTransactions()
     },
 
     prevMonth () {
@@ -285,6 +350,7 @@ export const useFinanceStore = defineStore('finance', {
         this.currentMonth--
       }
       this.fetchTransactions()
+      this.fetchPropertyTransactions()
     }
   }
 })
