@@ -349,6 +349,9 @@ onMounted(() => {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px;
+  :deep(.summary-card:last-child:nth-child(odd)) {
+    grid-column: 1 / -1;
+  }
 }
 .quick-actions {
   display: grid;
