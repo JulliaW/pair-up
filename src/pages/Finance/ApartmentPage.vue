@@ -113,32 +113,6 @@
         </div>
       </div>
 
-      <!-- Gastos por Categoria -->
-      <div class="dashboard-section">
-        <div class="section-header">
-          <span class="section-title">Gastos por Categoria</span>
-          <span class="section-period">Geral</span>
-        </div>
-        <div v-if="chartData.length === 0" class="empty-state">
-          <q-icon name="pie_chart" size="32px" color="grey-5" />
-          <p>Nenhum gasto registrado</p>
-        </div>
-        <div v-else class="chart-card">
-          <DonutChart :data="chartData" :size="160" :stroke-width="24" />
-          <div class="chart-legend">
-            <div
-              v-for="item in chartData"
-              :key="item.label"
-              class="legend-item"
-            >
-              <span class="legend-dot" :style="{ background: item.color }" />
-              <span class="legend-name">{{ item.label }}</span>
-              <span class="legend-value">{{ formatCurrency(item.value) }}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
       <!-- Transações do Apartamento com navegação de mês -->
       <div class="dashboard-section">
         <div class="section-header">
@@ -219,7 +193,7 @@
 
     <!-- Dialog: Configurar Financiamento -->
     <q-dialog v-model="showPropertyDialog">
-      <q-card style="min-width: 350px">
+      <q-card class="dialog-card">
         <q-card-section
           ><div class="text-h6">Configurar Financiamento</div></q-card-section
         >
@@ -280,7 +254,7 @@
 
     <!-- Dialog: Nova Transação do Apartamento -->
     <q-dialog v-model="showTransactionDialog">
-      <q-card style="min-width: 350px; max-width: 500px">
+      <q-card class="dialog-card">
         <q-card-section
           ><div class="text-h6">
             Nova Transação (Apartamento)
@@ -338,7 +312,6 @@ import { ref, computed, onMounted } from "vue";
 import { useFinanceStore } from "src/stores/financeStore";
 import { formatCurrency, formatDate } from "src/utils/formatters";
 import SummaryCard from "src/components/SummaryCard.vue";
-import DonutChart from "src/components/charts/DonutChart.vue";
 
 const financeStore = useFinanceStore();
 
@@ -402,15 +375,6 @@ const entradaTotalPaid = computed(() => financeStore.entradaTotalPaid);
 const remainingDownPayment = computed(() => financeStore.remainingDownPayment);
 const jurosObraTotal = computed(() => financeStore.jurosObraTotal);
 const totalInvested = computed(() => financeStore.totalInvested);
-
-// Gráfico e transações - sempre histórico completo
-const chartData = computed(() => {
-  return financeStore.allPropertyExpensesByCategory.map((item) => ({
-    label: item.name,
-    value: item.total,
-    color: item.color,
-  }));
-});
 
 const propertyCategoryOptions = computed(() => {
   return financeStore.categories
@@ -521,8 +485,13 @@ onMounted(async () => {
 
 .summary-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   gap: 10px;
+  min-width: 0;
+}
+
+.summary-grid > * {
+  min-width: 0;
 }
 
 .empty-state {
@@ -533,51 +502,6 @@ onMounted(async () => {
   padding: 24px;
   color: var(--text-muted);
   font-size: 0.875rem;
-}
-
-.chart-card {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  background: var(--surface);
-  border: 1px solid var(--separator);
-  border-radius: 16px;
-  padding: 16px;
-}
-
-.chart-legend {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.legend-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 0.8125rem;
-}
-
-.legend-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-
-.legend-name {
-  color: var(--text-primary);
-  flex: 1;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.legend-value {
-  color: var(--text-secondary);
-  font-weight: 500;
-  font-variant-numeric: tabular-nums;
 }
 
 .transaction-list {
@@ -641,5 +565,11 @@ onMounted(async () => {
 
 .page-spacer {
   height: 24px;
+}
+
+.dialog-card {
+  min-width: 320px;
+  width: 90vw;
+  max-width: 450px;
 }
 </style>

@@ -3,7 +3,7 @@
     class="summary-card"
     :class="[`summary-card--${variant}`, { 'summary-card--large': large }]"
   >
-    <div class="row items-center no-wrap">
+    <div class="row items-center">
       <div v-if="icon" class="summary-card__icon q-mr-md">
         <q-icon :name="icon" :size="large ? '28px' : '22px'" />
       </div>
@@ -186,12 +186,14 @@ const isPositive = computed(
 }
 
 .summary-card__value {
-  font-size: 22px;
+  font-size: clamp(16px, 5vw, 22px);
   font-weight: 700;
   color: #1e293b;
   margin-top: 4px;
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.02em;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 .summary-card--large .summary-card__value {
