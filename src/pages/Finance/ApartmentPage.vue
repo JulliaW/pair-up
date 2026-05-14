@@ -30,31 +30,6 @@
     </div>
 
     <template v-else>
-      <!-- Navegação de Mês -->
-      <div class="dashboard-section">
-        <div class="section-header">
-          <div class="row items-center">
-            <q-btn
-              flat
-              round
-              dense
-              icon="chevron_left"
-              size="sm"
-              @click="financeStore.prevMonth()"
-            />
-            <span class="section-title q-mx-sm">{{ currentMonthLabel }}</span>
-            <q-btn
-              flat
-              round
-              dense
-              icon="chevron_right"
-              size="sm"
-              @click="financeStore.nextMonth()"
-            />
-          </div>
-        </div>
-      </div>
-
       <!-- Resumo do Financiamento -->
       <div class="dashboard-section">
         <div class="section-header">
@@ -138,31 +113,15 @@
         </div>
       </div>
 
-      <!-- Gastos por Categoria com toggle -->
+      <!-- Gastos por Categoria -->
       <div class="dashboard-section">
         <div class="section-header">
           <span class="section-title">Gastos por Categoria</span>
-          <q-btn-toggle
-            v-model="chartScope"
-            flat
-            dense
-            no-caps
-            :options="[
-              { label: 'Este mês', value: 'month' },
-              { label: 'Histórico', value: 'all' },
-            ]"
-            color="primary"
-          />
+          <span class="section-period">Geral</span>
         </div>
         <div v-if="chartData.length === 0" class="empty-state">
           <q-icon name="pie_chart" size="32px" color="grey-5" />
-          <p>
-            {{
-              chartScope === "month"
-                ? "Nenhum gasto do apartamento este mês"
-                : "Nenhum gasto registrado no histórico"
-            }}
-          </p>
+          <p>Nenhum gasto registrado</p>
         </div>
         <div v-else class="chart-card">
           <DonutChart :data="chartData" :size="160" :stroke-width="24" />
@@ -180,12 +139,28 @@
         </div>
       </div>
 
-      <!-- Transações do Apartamento -->
+      <!-- Transações do Apartamento com navegação de mês -->
       <div class="dashboard-section">
         <div class="section-header">
-          <span class="section-title">{{
-            chartScope === "month" ? "Transações do Mês" : "Todas as Transações"
-          }}</span>
+          <div class="row items-center">
+            <q-btn
+              flat
+              round
+              dense
+              icon="chevron_left"
+              size="sm"
+              @click="financeStore.prevMonth()"
+            />
+            <span class="section-title q-mx-sm">{{ currentMonthLabel }}</span>
+            <q-btn
+              flat
+              round
+              dense
+              icon="chevron_right"
+              size="sm"
+              @click="financeStore.nextMonth()"
+            />
+          </div>
           <q-btn
             flat
             dense
@@ -195,9 +170,16 @@
             @click="openTransactionDialog()"
           />
         </div>
-        <div class="transaction-list">
+        <div
+          v-if="financeStore.propertyTransactions.length === 0"
+          class="empty-state"
+        >
+          <q-icon name="receipt_long" size="32px" color="grey-5" />
+          <p>{{ transacoesVazias }}</p>
+        </div>
+        <div v-else class="transaction-list">
           <div
-            v-for="t in visibleTransactions"
+            v-for="t in financeStore.propertyTransactions"
             :key="t.id"
             class="transaction-item"
           >
@@ -362,7 +344,6 @@ const financeStore = useFinanceStore();
 
 const showPropertyDialog = ref(false);
 const showTransactionDialog = ref(false);
-const chartScope = ref("all"); // 'month' ou 'all'
 
 const propertyForm = ref({
   name: "Apartamento",
@@ -395,7 +376,11 @@ const currentMonthLabel = computed(() => {
     "Novembro",
     "Dezembro",
   ];
-  return `${months[financeStore.currentMonth - 1]} ${financeStore.currentYear}`;
+  return months[financeStore.currentMonth - 1] + " " + financeStore.currentYear;
+});
+
+const transacoesVazias = computed(() => {
+  return `Nenhuma transação em ${currentMonthLabel.value}`;
 });
 
 // Cards do financiamento
@@ -418,23 +403,13 @@ const remainingDownPayment = computed(() => financeStore.remainingDownPayment);
 const jurosObraTotal = computed(() => financeStore.jurosObraTotal);
 const totalInvested = computed(() => financeStore.totalInvested);
 
-// Gráfico e transações - baseado no toggle
+// Gráfico e transações - sempre histórico completo
 const chartData = computed(() => {
-  const source =
-    chartScope.value === "month"
-      ? financeStore.propertyExpensesByCategory
-      : financeStore.allPropertyExpensesByCategory;
-  return source.map((item) => ({
+  return financeStore.allPropertyExpensesByCategory.map((item) => ({
     label: item.name,
     value: item.total,
     color: item.color,
   }));
-});
-
-const visibleTransactions = computed(() => {
-  return chartScope.value === "month"
-    ? financeStore.propertyTransactions
-    : financeStore.allPropertyTransactions;
 });
 
 const propertyCategoryOptions = computed(() => {
