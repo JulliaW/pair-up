@@ -85,8 +85,8 @@
           <SummaryCard
             icon="trending_down"
             icon-color="positive"
-            label="Total Pago"
-            :value="totalPaid"
+            label="Total Abatido"
+            :value="financiamentoTotal"
             variant="income"
           />
           <SummaryCard
@@ -100,31 +100,81 @@
         </div>
       </div>
 
-      <!-- Gastos por Categoria (Apartamento) -->
+      <!-- Investimento Total -->
+      <div class="dashboard-section">
+        <div class="section-header">
+          <span class="section-title">Investimento Total</span>
+          <span class="section-period">Histórico completo</span>
+        </div>
+        <div class="summary-grid">
+          <SummaryCard
+            icon="payments"
+            icon-color="info"
+            label="Total Entrada Paga"
+            :value="entradaTotalPaid"
+            variant="income"
+          />
+          <SummaryCard
+            icon="payments"
+            icon-color="negative"
+            label="Falta da Entrada"
+            :value="remainingDownPayment"
+            variant="expense"
+          />
+          <SummaryCard
+            icon="construction"
+            icon-color="warning"
+            label="Total Juros Obra"
+            :value="jurosObraTotal"
+            variant="default"
+          />
+          <SummaryCard
+            icon="diamond"
+            icon-color="positive"
+            label="Total Investido"
+            :value="totalInvested"
+            variant="primary"
+          />
+        </div>
+      </div>
+
+      <!-- Gastos por Categoria com toggle -->
       <div class="dashboard-section">
         <div class="section-header">
           <span class="section-title">Gastos por Categoria</span>
-          <span class="section-period">Este mês</span>
+          <q-btn-toggle
+            v-model="chartScope"
+            flat
+            dense
+            no-caps
+            :options="[
+              { label: 'Este mês', value: 'month' },
+              { label: 'Histórico', value: 'all' },
+            ]"
+            color="primary"
+          />
         </div>
-        <div v-if="propertyCategories.length === 0" class="empty-state">
+        <div v-if="chartData.length === 0" class="empty-state">
           <q-icon name="pie_chart" size="32px" color="grey-5" />
-          <p>Nenhum gasto do apartamento este mês</p>
+          <p>
+            {{
+              chartScope === "month"
+                ? "Nenhum gasto do apartamento este mês"
+                : "Nenhum gasto registrado no histórico"
+            }}
+          </p>
         </div>
         <div v-else class="chart-card">
-          <DonutChart
-            :data="propertyCategories"
-            :size="160"
-            :stroke-width="24"
-          />
+          <DonutChart :data="chartData" :size="160" :stroke-width="24" />
           <div class="chart-legend">
             <div
-              v-for="item in propertyCategories"
-              :key="item.name"
+              v-for="item in chartData"
+              :key="item.label"
               class="legend-item"
             >
               <span class="legend-dot" :style="{ background: item.color }" />
-              <span class="legend-name">{{ item.name }}</span>
-              <span class="legend-value">{{ formatCurrency(item.total) }}</span>
+              <span class="legend-name">{{ item.label }}</span>
+              <span class="legend-value">{{ formatCurrency(item.value) }}</span>
             </div>
           </div>
         </div>
@@ -133,7 +183,9 @@
       <!-- Transações do Apartamento -->
       <div class="dashboard-section">
         <div class="section-header">
-          <span class="section-title">Transações</span>
+          <span class="section-title">{{
+            chartScope === "month" ? "Transações do Mês" : "Todas as Transações"
+          }}</span>
           <q-btn
             flat
             dense
@@ -143,16 +195,9 @@
             @click="openTransactionDialog()"
           />
         </div>
-        <div
-          v-if="financeStore.propertyTransactions.length === 0"
-          class="empty-state"
-        >
-          <q-icon name="receipt_long" size="32px" color="grey-5" />
-          <p>Nenhuma transação do apartamento este mês</p>
-        </div>
-        <div v-else class="transactions-list">
+        <div class="transaction-list">
           <div
-            v-for="t in financeStore.propertyTransactions"
+            v-for="t in visibleTransactions"
             :key="t.id"
             class="transaction-item"
           >
@@ -168,14 +213,14 @@
                 {{ formatDate(t.date) }}</span
               >
             </div>
-            <span class="transaction-amount text-negative">
-              -{{ formatCurrency(t.amount) }}
-            </span>
+            <span class="transaction-amount text-negative"
+              >-{{ formatCurrency(t.amount) }}</span
+            >
           </div>
         </div>
       </div>
 
-      <!-- Botão rápido adicionar transação do apartamento -->
+      <!-- Botão adicionar -->
       <div class="dashboard-section">
         <q-btn
           outline
@@ -188,7 +233,6 @@
       </div>
     </template>
 
-    <!-- Espaço no final -->
     <div class="page-spacer" />
 
     <!-- Dialog: Configurar Financiamento -->
@@ -199,9 +243,27 @@
         >
         <q-card-section>
           <q-form @submit.prevent="handleSaveProperty" class="q-gutter-sm">
+            <q-input v-model="propertyForm.name" label="Nome" outlined dense />
             <q-input
               v-model="propertyForm.financed_amount"
               label="Valor financiado"
+              type="number"
+              outlined
+              dense
+              prefix="R$"
+              :rules="[(v) => !!v || 'Obrigatório']"
+            />
+            <q-input
+              v-model="propertyForm.down_payment_total"
+              label="Valor total da entrada (construtora)"
+              type="number"
+              outlined
+              dense
+              prefix="R$"
+            />
+            <q-input
+              v-model="propertyForm.remaining_balance"
+              label="Saldo devedor atual"
               type="number"
               outlined
               dense
@@ -215,7 +277,6 @@
               outlined
               dense
               step="0.01"
-              :rules="[(v) => !!v || 'Obrigatório']"
             />
             <q-input
               v-model="propertyForm.monthly_payment"
@@ -224,16 +285,6 @@
               outlined
               dense
               prefix="R$"
-              :rules="[(v) => !!v || 'Obrigatório']"
-            />
-            <q-input
-              v-model="propertyForm.remaining_balance"
-              label="Saldo devedor atual"
-              type="number"
-              outlined
-              dense
-              prefix="R$"
-              :rules="[(v) => !!v || 'Obrigatório']"
             />
             <div class="row q-gutter-sm">
               <q-space />
@@ -248,9 +299,11 @@
     <!-- Dialog: Nova Transação do Apartamento -->
     <q-dialog v-model="showTransactionDialog">
       <q-card style="min-width: 350px; max-width: 500px">
-        <q-card-section>
-          <div class="text-h6">Nova Transação (Apartamento)</div>
-        </q-card-section>
+        <q-card-section
+          ><div class="text-h6">
+            Nova Transação (Apartamento)
+          </div></q-card-section
+        >
         <q-card-section>
           <q-form @submit.prevent="handleSaveTransaction" class="q-gutter-sm">
             <q-input
@@ -309,9 +362,12 @@ const financeStore = useFinanceStore();
 
 const showPropertyDialog = ref(false);
 const showTransactionDialog = ref(false);
+const chartScope = ref("all"); // 'month' ou 'all'
 
 const propertyForm = ref({
+  name: "Apartamento",
   financed_amount: 202055.9,
+  down_payment_total: 0,
   interest_rate: 7.66,
   monthly_payment: 1500,
   remaining_balance: 202055.9,
@@ -342,26 +398,44 @@ const currentMonthLabel = computed(() => {
   return `${months[financeStore.currentMonth - 1]} ${financeStore.currentYear}`;
 });
 
+// Cards do financiamento
 const financedAmount = computed(
   () => Number(financeStore.property?.financed_amount) || 0,
 );
 const remainingBalance = computed(
   () => Number(financeStore.property?.remaining_balance) || 0,
 );
-const totalPaid = computed(() => {
-  const total = financedAmount.value;
-  const remaining = remainingBalance.value;
-  return Math.max(0, total - remaining);
-});
+const financiamentoTotal = computed(() => financeStore.financiamentoTotal);
 const propertyProgress = computed(() => {
   const total = financedAmount.value || 1;
-  const paid = totalPaid.value;
+  const paid = financiamentoTotal.value;
   return Math.min(100, Math.max(0, Math.round((paid / total) * 100)));
 });
 
-const propertyCategories = computed(
-  () => financeStore.propertyExpensesByCategory,
-);
+// Cards de investimento
+const entradaTotalPaid = computed(() => financeStore.entradaTotalPaid);
+const remainingDownPayment = computed(() => financeStore.remainingDownPayment);
+const jurosObraTotal = computed(() => financeStore.jurosObraTotal);
+const totalInvested = computed(() => financeStore.totalInvested);
+
+// Gráfico e transações - baseado no toggle
+const chartData = computed(() => {
+  const source =
+    chartScope.value === "month"
+      ? financeStore.propertyExpensesByCategory
+      : financeStore.allPropertyExpensesByCategory;
+  return source.map((item) => ({
+    label: item.name,
+    value: item.total,
+    color: item.color,
+  }));
+});
+
+const visibleTransactions = computed(() => {
+  return chartScope.value === "month"
+    ? financeStore.propertyTransactions
+    : financeStore.allPropertyTransactions;
+});
 
 const propertyCategoryOptions = computed(() => {
   return financeStore.categories
@@ -376,7 +450,9 @@ const propertyCategoryOptions = computed(() => {
 function openPropertyDialog() {
   if (financeStore.property) {
     propertyForm.value = {
+      name: financeStore.property.name || "Apartamento",
       financed_amount: financeStore.property.financed_amount,
+      down_payment_total: financeStore.property.down_payment_total || 0,
       interest_rate: financeStore.property.interest_rate,
       monthly_payment: financeStore.property.monthly_payment,
       remaining_balance: financeStore.property.remaining_balance,
@@ -387,7 +463,9 @@ function openPropertyDialog() {
 
 async function handleSaveProperty() {
   await financeStore.createOrUpdateProperty({
+    name: propertyForm.value.name,
     financed_amount: propertyForm.value.financed_amount,
+    down_payment_total: propertyForm.value.down_payment_total,
     interest_rate: propertyForm.value.interest_rate,
     monthly_payment: propertyForm.value.monthly_payment,
     remaining_balance: propertyForm.value.remaining_balance,
@@ -421,9 +499,12 @@ async function handleSaveTransaction() {
 }
 
 onMounted(async () => {
-  await financeStore.fetchProperty();
-  await financeStore.fetchPropertyTransactions();
-  await financeStore.fetchCategories();
+  await Promise.all([
+    financeStore.fetchProperty(),
+    financeStore.fetchPropertyTransactions(),
+    financeStore.fetchAllPropertyTransactions(),
+    financeStore.fetchCategories(),
+  ]);
 });
 </script>
 
@@ -524,7 +605,7 @@ onMounted(async () => {
   font-variant-numeric: tabular-nums;
 }
 
-.transactions-list {
+.transaction-list {
   display: flex;
   flex-direction: column;
   gap: 8px;

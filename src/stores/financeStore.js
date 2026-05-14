@@ -9,6 +9,7 @@ export const useFinanceStore = defineStore('finance', {
     creditCards: [],
     property: null,
     propertyTransactions: [],
+    allPropertyTransactions: [],
     propertyEvolution: [],
     savingsGoals: [],
     currentMonth: new Date().getMonth() + 1,
@@ -74,6 +75,45 @@ export const useFinanceStore = defineStore('finance', {
       })
       return Object.values(grouped).sort((a, b) => b.total - a.total)
     },
+    // Novos getters para apartamento - usam allPropertyTransactions (histórico completo)
+    allPropertyExpensesByCategory: (state) => {
+      const grouped = {}
+      ;(state.allPropertyTransactions || []).forEach(t => {
+        const catName = t.categories?.name || 'Sem categoria'
+        if (!grouped[catName]) {
+          grouped[catName] = { name: catName, total: 0, color: t.categories?.color || '#999', count: 0 }
+        }
+        grouped[catName].total += Number(t.amount)
+        grouped[catName].count++
+      })
+      return Object.values(grouped).sort((a, b) => b.total - a.total)
+    },
+    totalInvested: (state) => {
+      return (state.allPropertyTransactions || [])
+        .reduce((sum, t) => sum + Number(t.amount), 0)
+    },
+    financiamentoTotal: (state) => {
+      return (state.allPropertyTransactions || [])
+        .filter(t => t.categories?.name === 'Financiamento')
+        .reduce((sum, t) => sum + Number(t.amount), 0)
+    },
+    entradaTotalPaid: (state) => {
+      return (state.allPropertyTransactions || [])
+        .filter(t => t.categories?.name === 'Entrada')
+        .reduce((sum, t) => sum + Number(t.amount), 0)
+    },
+    jurosObraTotal: (state) => {
+      return (state.allPropertyTransactions || [])
+        .filter(t => t.categories?.name === 'Juros Obra')
+        .reduce((sum, t) => sum + Number(t.amount), 0)
+    },
+    remainingDownPayment: (state) => {
+      const total = Number(state.property?.down_payment_total) || 0
+      const paid = (state.allPropertyTransactions || [])
+        .filter(t => t.categories?.name === 'Entrada')
+        .reduce((sum, t) => sum + Number(t.amount), 0)
+      return Math.max(0, total - paid)
+    },
     propertyMonthTotal: (state) => {
       return (state.propertyTransactions || [])
         .filter(t => t.type === 'expense')
@@ -134,6 +174,25 @@ export const useFinanceStore = defineStore('finance', {
       }
     },
 
+    async fetchAllPropertyTransactions () {
+      const authStore = useAuthStore()
+      if (!authStore.coupleId) return
+
+      try {
+        const { data, error } = await supabase
+          .from('transactions')
+          .select('id, type, amount, description, date, category_id, card_id, is_recurring, created_by, created_at, categories(id, name, type, icon, color, scope)')
+          .eq('couple_id', authStore.coupleId)
+          .eq('property_related', true)
+          .order('date', { ascending: false })
+
+        if (error) throw error
+        this.allPropertyTransactions = data || []
+      } catch (err) {
+        console.error('Erro ao buscar todas transações do apartamento:', err)
+      }
+    },
+
     async createTransaction (transaction) {
       const authStore = useAuthStore()
       if (!authStore.coupleId) return { success: false, error: 'Sem casal vinculado' }
@@ -162,6 +221,18 @@ export const useFinanceStore = defineStore('finance', {
         this.transactions.unshift(data)
         if (transaction.property_related) {
           this.propertyTransactions.unshift(data)
+          this.allPropertyTransactions.unshift(data)
+
+          // Se for categoria "Financiamento", atualiza o remaining_balance
+          const catName = data.categories?.name
+          if (catName === 'Financiamento' && this.property) {
+            const newBalance = Math.max(0, Number(this.property.remaining_balance) - Number(data.amount))
+            await supabase
+              .from('properties')
+              .update({ remaining_balance: newBalance })
+              .eq('id', this.property.id)
+            this.property.remaining_balance = newBalance
+          }
         }
         return { success: true, data }
       } catch (err) {
@@ -182,6 +253,7 @@ export const useFinanceStore = defineStore('finance', {
         if (error) throw error
         this.transactions = this.transactions.filter(t => t.id !== id)
         this.propertyTransactions = this.propertyTransactions.filter(t => t.id !== id)
+        this.allPropertyTransactions = this.allPropertyTransactions.filter(t => t.id !== id)
         return { success: true }
       } catch (err) {
         console.error('Erro ao deletar transação:', err)
