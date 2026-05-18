@@ -70,7 +70,7 @@
             label="Progresso"
             :value="propertyProgress"
             variant="default"
-            :show-sign="false"
+            suffix="%"
           />
         </div>
       </div>

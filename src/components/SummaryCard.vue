@@ -54,9 +54,14 @@ const props = defineProps({
     type: Boolean,
     default: true,
   },
+  suffix: {
+    type: String,
+    default: "",
+  },
 });
 
 const formattedValue = computed(() => {
+  if (props.suffix) return `${props.value}${props.suffix}`;
   if (!props.showSign) return formatCurrency(Math.abs(props.value));
   return formatCurrency(props.value);
 });
