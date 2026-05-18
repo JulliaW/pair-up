@@ -158,7 +158,7 @@ const segments = computed(() => {
   return sortedData.value.map((item) => {
     const percent = total.value > 0 ? item.value / total.value : 0;
     const dashArray = `${circumference.value * percent} ${circumference.value}`;
-    const dashOffset = circumference.value * (0.25 - accumulatedPercent);
+    const dashOffset = -circumference.value * accumulatedPercent;
 
     accumulatedPercent += percent;
 

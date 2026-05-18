@@ -38,7 +38,12 @@
         <span class="section-title">Gastos por Categoria</span>
       </div>
       <div class="chart-card">
-        <DonutChart :data="chartData" :size="180" :stroke-width="28" />
+        <DonutChart
+          :data="chartData"
+          :size="180"
+          :stroke-width="28"
+          :show-legend="false"
+        />
         <div class="chart-legend">
           <div
             v-for="item in chartData.slice(0, 5)"
