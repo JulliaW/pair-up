@@ -26,3 +26,32 @@ if (process.env.PROD) {
     )
   )
 }
+
+// ---- Notificações da Agenda ----
+self.addEventListener('message', (event) => {
+  if (event.data?.type === 'SHOW_NOTIFICATION') {
+    const { title, body, tag } = event.data.payload
+    self.registration.showNotification(title, {
+      body,
+      tag: tag || 'agenda-notification',
+      icon: '/icons/icon-192x192.png',
+      badge: '/icons/icon-192x192.png',
+      vibrate: [200, 100, 200],
+      requireInteraction: true
+    })
+  }
+})
+
+// Ao clicar na notificação, abre/foca o app
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close()
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true })
+      .then((clientList) => {
+        if (clientList.length > 0) {
+          return clientList[0].focus()
+        }
+        return clients.openWindow('/')
+      })
+  )
+})

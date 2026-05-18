@@ -228,11 +228,12 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted } from "vue";
+import { ref, computed, watch, onMounted, onUnmounted } from "vue";
 import { useAgendaStore } from "src/stores/agendaStore";
 import { useAuthStore } from "src/stores/authStore";
 import { useQuasar } from "quasar";
 import { getMonthName } from "src/utils/formatters";
+import { useEventNotifications } from "src/composables/useEventNotifications";
 
 const $q = useQuasar();
 const agendaStore = useAgendaStore();
@@ -461,6 +462,28 @@ onMounted(() => {
   agendaStore.fetchEvents();
   selectedDate.value = new Date().toISOString().split("T")[0];
 });
+
+// Notificações da agenda
+const { startChecker, stopChecker, checkAndNotify } = useEventNotifications();
+onMounted(() => {
+  // Pede permissão se ainda não tiver
+  if (Notification.permission === "default") {
+    Notification.requestPermission();
+  }
+  startChecker();
+});
+onUnmounted(() => {
+  stopChecker();
+});
+
+// Reavalia notificações sempre que a lista de eventos mudar
+watch(
+  () => agendaStore.events,
+  () => {
+    checkAndNotify();
+  },
+  { deep: true },
+);
 </script>
 
 <style scoped lang="scss">
