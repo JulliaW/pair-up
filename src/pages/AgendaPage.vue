@@ -254,11 +254,26 @@ const recurrenceOptions = [
 
 const partnerOptions = computed(() => {
   const options = [];
-  if (authStore.user) {
+  if (authStore.couple?.partner1_name) {
     options.push({
-      label: authStore.user.name || "Você",
-      value: authStore.user.id,
+      label: authStore.couple.partner1_name,
+      value: authStore.couple.partner1_id,
     });
+  }
+  if (authStore.couple?.partner2_name) {
+    options.push({
+      label: authStore.couple.partner2_name,
+      value: authStore.couple.partner2_id,
+    });
+  }
+  if (authStore.user) {
+    const me = authStore.user;
+    const already =
+      authStore.couple?.partner1_id === me.id ||
+      authStore.couple?.partner2_id === me.id;
+    if (!already) {
+      options.push({ label: me.name || "Você", value: me.id });
+    }
   }
   return options;
 });
